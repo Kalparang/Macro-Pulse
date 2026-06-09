@@ -87,3 +87,83 @@ class MainTests(unittest.IsolatedAsyncioTestCase):
             html_report.assert_called_once_with(data)
             telegram_summary.assert_called_once_with(data, "US", config)
             telegram.assert_not_awaited()
+
+    async def test_main_sends_to_configured_delivery_platforms(self):
+        data = {
+            "indices_overseas": [
+                AssetSnapshot(name="S&P 500", price=5100.25, change_pct=0.42)
+            ]
+        }
+        config = ReportFormatConfig(
+            modes={
+                "US": ModeFormatConfig(
+                    summary_sections=[
+                        SummarySectionConfig(
+                            title="해외 증시",
+                            category="indices_overseas",
+                            items=["S&P 500"],
+                        )
+                    ],
+                    screenshot_targets=["finviz"],
+                )
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with (
+                patch("macro_pulse.app.cli.fetch_all_data", return_value=data),
+                patch(
+                    "macro_pulse.app.cli.load_report_format_config",
+                    return_value=config,
+                ),
+                patch(
+                    "macro_pulse.app.cli.generate_html_report",
+                    return_value="<html>report</html>",
+                ),
+                patch(
+                    "macro_pulse.app.cli.generate_telegram_summary",
+                    return_value="summary",
+                ),
+                patch(
+                    "macro_pulse.app.cli.capture_screenshots",
+                    return_value=["map.png"],
+                ) as screenshots,
+                patch("macro_pulse.app.cli.cleanup_files") as cleanup,
+                patch(
+                    "macro_pulse.app.cli.send_telegram_report",
+                    new_callable=AsyncMock,
+                ) as telegram,
+                patch(
+                    "macro_pulse.app.cli.send_discord_report",
+                    new_callable=AsyncMock,
+                ) as discord,
+                patch.dict(
+                    os.environ,
+                    {
+                        "TELEGRAM_BOT_TOKEN": "token",
+                        "TELEGRAM_CHAT_ID": "chat-id",
+                        "DISCORD_WEBHOOK_URL": "webhook-url",
+                    },
+                ),
+            ):
+                previous_cwd = os.getcwd()
+                os.chdir(temp_dir)
+                try:
+                    exit_code = await app_main.main(["--market", "US"])
+                finally:
+                    os.chdir(previous_cwd)
+
+        self.assertEqual(exit_code, 0)
+        screenshots.assert_called_once_with(["finviz"])
+        telegram.assert_awaited_once_with(
+            "token",
+            "chat-id",
+            "summary",
+            image_paths=["map.png"],
+        )
+        discord.assert_awaited_once_with(
+            "webhook-url",
+            "summary",
+            image_paths=["map.png"],
+        )
+        cleanup.assert_called_once_with(["map.png"])

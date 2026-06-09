@@ -23,9 +23,11 @@ uv sync --all-groups
 ```ini
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
+DISCORD_WEBHOOK_URL=your_discord_webhook_url_here
 ```
 
 - 텔레그램 값이 없으면 텔레그램 전송은 건너뜁니다.
+- 디스코드 값이 없으면 디스코드 전송은 건너뜁니다.
 
 ### 리포트만 생성
 
@@ -91,4 +93,5 @@ docker run --rm \
 
 - 스크린샷이 실패하면 Chrome/Chromium 실행 환경을 확인하세요.
 - 텔레그램이 오지 않으면 `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`를 다시 확인하세요.
+- 디스코드 메시지가 오지 않으면 `DISCORD_WEBHOOK_URL`을 다시 확인하세요.
 - 일부 데이터가 비어 있으면 외부 데이터 소스 응답 문제일 수 있습니다.

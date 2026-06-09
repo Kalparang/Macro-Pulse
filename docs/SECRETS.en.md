@@ -9,13 +9,18 @@ The workflows run inside a runtime image built from `uv.lock`.
 Path:
 `Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`
 
-## Required
+## Delivery Platforms
 
 ### Telegram
 
 - `TELEGRAM_BOT_TOKEN`: the token from BotFather for your Telegram bot
 - `TELEGRAM_CHAT_ID`: the chat or channel ID that should receive the report
 
+### Discord
+
+- `DISCORD_WEBHOOK_URL`: the Incoming Webhook URL for the Discord channel that should receive the report
+
 ## Notes
 
 - Secret names must match exactly.
+- Delivery platforms without configured secrets are skipped.

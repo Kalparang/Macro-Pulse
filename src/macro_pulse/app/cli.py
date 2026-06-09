@@ -11,7 +11,7 @@ from ..config.report_formats import get_screenshot_targets, load_report_format_c
 from ..core.artifacts import cleanup_files
 from ..core.logging import configure_logging, get_logger
 from ..data.market_data import fetch_all_data
-from ..delivery.notifier import send_telegram_report
+from ..delivery.notifier import send_discord_report, send_telegram_report
 from ..reporting.generator import generate_html_report, generate_telegram_summary
 from ..reporting.screenshots import capture_screenshots
 
@@ -55,8 +55,8 @@ async def main(argv: list[str] | None = None) -> int:
 
     data = fetch_all_data()
     html_report = generate_html_report(data)
-    telegram_summary = generate_telegram_summary(data, mode, report_format_config)
-    logger.info("Telegram Summary (%s):\n%s\n", mode, telegram_summary)
+    delivery_summary = generate_telegram_summary(data, mode, report_format_config)
+    logger.info("Delivery Summary (%s):\n%s\n", mode, delivery_summary)
 
     output_path = Path("macro_pulse_report.html")
     output_path.write_text(html_report, encoding="utf-8")
@@ -73,12 +73,20 @@ async def main(argv: list[str] | None = None) -> int:
     try:
         telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN")
         telegram_chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+        discord_webhook_url = os.environ.get("DISCORD_WEBHOOK_URL")
 
         if telegram_token and telegram_chat_id:
             await send_telegram_report(
                 telegram_token,
                 telegram_chat_id,
-                telegram_summary,
+                delivery_summary,
+                image_paths=screenshot_paths,
+            )
+
+        if discord_webhook_url:
+            await send_discord_report(
+                discord_webhook_url,
+                delivery_summary,
                 image_paths=screenshot_paths,
             )
     finally:

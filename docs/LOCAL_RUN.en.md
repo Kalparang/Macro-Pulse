@@ -23,9 +23,11 @@ Create a `.env` file in the project root.
 ```ini
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
+DISCORD_WEBHOOK_URL=your_discord_webhook_url_here
 ```
 
 - If Telegram values are missing, Telegram delivery is skipped.
+- If the Discord value is missing, Discord delivery is skipped.
 
 ### Generate only the report
 
@@ -91,4 +93,5 @@ docker run --rm \
 
 - If screenshots fail, check your Chrome/Chromium setup.
 - If Telegram messages do not arrive, re-check `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
+- If Discord messages do not arrive, re-check `DISCORD_WEBHOOK_URL`.
 - If some data is missing, an external data source may have failed.
