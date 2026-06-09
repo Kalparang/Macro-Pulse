@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import csv
 import io
+import json
+import os
 from dataclasses import dataclass
 from datetime import date, timedelta
 from time import sleep
+from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -20,6 +23,7 @@ FRED_CSV_URL = (
     "https://fred.stlouisfed.org/graph/fredgraph.csv"
     "?id={series_id}&cosd={start_date}"
 )
+FRED_OBSERVATIONS_URL = "https://api.stlouisfed.org/fred/series/observations"
 REQUEST_HEADERS = {
     "User-Agent": "Macro-Pulse Bot",
     "Accept": "text/csv,*/*;q=0.8",
@@ -43,6 +47,19 @@ def fetch_fred_snapshot(
     retry_delay: float = 1.0,
 ) -> AssetSnapshot | None:
     start_date = date.today() - timedelta(days=DEFAULT_LOOKBACK_DAYS)
+    api_key = os.environ.get("FRED_API_KEY", "").strip()
+    if api_key:
+        snapshot = fetch_fred_official_snapshot(
+            definition,
+            api_key,
+            start_date=start_date,
+            timeout=timeout,
+            attempts=attempts,
+            retry_delay=retry_delay,
+        )
+        if snapshot is not None:
+            return snapshot
+
     url = FRED_CSV_URL.format(
         series_id=definition.series_id,
         start_date=start_date.isoformat(),
@@ -85,6 +102,72 @@ def fetch_fred_snapshot(
     return None
 
 
+def fetch_fred_official_snapshot(
+    definition: FredSeriesDefinition,
+    api_key: str,
+    *,
+    start_date: date,
+    timeout: int = 30,
+    attempts: int = 2,
+    retry_delay: float = 1.0,
+) -> AssetSnapshot | None:
+    params = urlencode(
+        {
+            "series_id": definition.series_id,
+            "api_key": api_key,
+            "file_type": "json",
+            "observation_start": start_date.isoformat(),
+            "sort_order": "asc",
+        }
+    )
+    url = f"{FRED_OBSERVATIONS_URL}?{params}"
+    cache = TtlCache()
+    cache_key = f"fred:official:{definition.series_id}:{start_date.isoformat()}"
+
+    cached_json = cache.get_json(cache_key, DEFAULT_FRED_CACHE_TTL_SECONDS)
+    if cached_json:
+        try:
+            return parse_fred_official_snapshot(definition, cached_json)
+        except ValueError:
+            pass
+
+    for attempt in range(1, attempts + 1):
+        try:
+            request = Request(
+                url,
+                headers={**REQUEST_HEADERS, "Accept": "application/json"},
+            )
+            with urlopen(request, timeout=timeout) as response:
+                payload = json.loads(response.read().decode("utf-8", "ignore"))
+            cache.set_json(cache_key, payload)
+            return parse_fred_official_snapshot(definition, payload)
+        except (
+            HTTPError,
+            URLError,
+            TimeoutError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as exc:
+            if attempt == attempts:
+                logger.error(
+                    "Failed to fetch official FRED series %s: %s",
+                    definition.series_id,
+                    exc,
+                )
+                return None
+
+            logger.warning(
+                "Retrying official FRED series %s after attempt %s/%s failed: %s",
+                definition.series_id,
+                attempt,
+                attempts,
+                exc,
+            )
+            sleep(retry_delay)
+
+    return None
+
+
 def fetch_fred_snapshots(
     series_groups: dict[str, tuple[FredSeriesDefinition, ...]],
 ) -> ReportDataset:
@@ -117,6 +200,38 @@ def parse_fred_snapshot(
         definition.name,
         latest_value,
         change,
+        None,
+        history=[value for _, value in latest_points],
+        dates=[_format_fred_date(date_value) for date_value, _ in latest_points],
+        value_format=definition.value_format,
+    )
+
+
+def parse_fred_official_snapshot(
+    definition: FredSeriesDefinition,
+    payload: dict,
+) -> AssetSnapshot:
+    observations = payload.get("observations", [])
+    points: list[tuple[str, float]] = []
+    for observation in observations:
+        raw_value = str(observation.get("value", "")).strip()
+        if raw_value in {"", "."}:
+            continue
+        try:
+            points.append((str(observation["date"]), float(raw_value)))
+        except (KeyError, ValueError):
+            continue
+
+    if not points:
+        raise ValueError(f"FRED series {definition.series_id} has no numeric values.")
+
+    latest_points = points[-7:]
+    latest_value = latest_points[-1][1]
+    previous_value = latest_points[-2][1] if len(latest_points) > 1 else latest_value
+    return build_snapshot(
+        definition.name,
+        latest_value,
+        latest_value - previous_value,
         None,
         history=[value for _, value in latest_points],
         dates=[_format_fred_date(date_value) for date_value, _ in latest_points],

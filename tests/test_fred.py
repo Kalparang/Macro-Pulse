@@ -5,7 +5,11 @@ import unittest
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
 
-from macro_pulse.data.providers.fred import FredSeriesDefinition, parse_fred_snapshot
+from macro_pulse.data.providers.fred import (
+    FredSeriesDefinition,
+    parse_fred_official_snapshot,
+    parse_fred_snapshot,
+)
 from macro_pulse.domain.models import ValueFormat
 
 
@@ -20,6 +24,15 @@ SAMPLE_LEGACY_FRED_CSV = """DATE,DGS2
 2026-06-03,3.83
 2026-06-04,3.79
 """
+
+SAMPLE_FRED_OFFICIAL_PAYLOAD = {
+    "observations": [
+        {"date": "2026-06-01", "value": "3.81"},
+        {"date": "2026-06-02", "value": "."},
+        {"date": "2026-06-03", "value": "3.83"},
+        {"date": "2026-06-04", "value": "3.79"},
+    ]
+}
 
 
 class FredProviderTests(unittest.TestCase):
@@ -49,6 +62,21 @@ class FredProviderTests(unittest.TestCase):
 
         self.assertEqual(snapshot.dates, ["06-03", "06-04"])
         self.assertAlmostEqual(snapshot.price, 3.79)
+
+    def test_parse_fred_official_snapshot_uses_observations(self):
+        snapshot = parse_fred_official_snapshot(
+            FredSeriesDefinition(
+                "US 2Y Treasury",
+                "DGS2",
+                value_format=ValueFormat.YIELD_3,
+            ),
+            SAMPLE_FRED_OFFICIAL_PAYLOAD,
+        )
+
+        self.assertEqual(snapshot.history, [3.81, 3.83, 3.79])
+        self.assertEqual(snapshot.dates, ["06-01", "06-03", "06-04"])
+        self.assertAlmostEqual(snapshot.price, 3.79)
+        self.assertAlmostEqual(snapshot.change, -0.04)
 
 
 if __name__ == "__main__":

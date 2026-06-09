@@ -46,6 +46,9 @@ class ReportFormatConfigTests(unittest.TestCase):
         self.assertIn("US 2Y Treasury", us_sections["commodities_rates"])
         self.assertIn("US 10Y-2Y Spread", us_sections["commodities_rates"])
         self.assertIn("US High Yield Spread", us_sections["risk"])
+        self.assertIn("US CPI Index", us_sections["macro_us"])
+        self.assertIn("US Unemployment Rate", us_sections["macro_us"])
+        self.assertIn("SEC Tracked Filings (7d)", us_sections["disclosures_us"])
 
     def test_default_config_defines_expected_workflow_schedules(self):
         config = load_report_format_config()

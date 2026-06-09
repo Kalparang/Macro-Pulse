@@ -108,6 +108,8 @@ def _empty_report_dataset() -> ReportDataset:
         "commodities_rates": [],
         "exchange": [],
         "risk": [],
+        "macro_us": [],
+        "disclosures_us": [],
         "crypto": [],
     }
 

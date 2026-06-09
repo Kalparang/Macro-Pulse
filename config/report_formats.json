@@ -113,6 +113,16 @@
           "items": ["DXY", "USD/KRW", "JPY/KRW"]
         },
         {
+          "title": "\ubbf8\uad6d \uacbd\uc81c",
+          "category": "macro_us",
+          "items": [
+            "US CPI Index",
+            "US Unemployment Rate",
+            "US Nonfarm Payrolls",
+            "US Avg Hourly Earnings"
+          ]
+        },
+        {
           "title": "\ub9ac\uc2a4\ud06c",
           "category": "volatility",
           "items": ["VIX", "MOVE"]
@@ -121,6 +131,15 @@
           "title": "\uc2e0\uc6a9",
           "category": "risk",
           "items": ["US High Yield Spread"]
+        },
+        {
+          "title": "SEC \uacf5\uc2dc",
+          "category": "disclosures_us",
+          "items": [
+            "SEC Tracked Filings (7d)",
+            "SEC 8-K Filings (7d)",
+            "SEC 10-Q/K Filings (7d)"
+          ]
         },
         {
           "title": "\uc554\ud638\ud654\ud3d0",
