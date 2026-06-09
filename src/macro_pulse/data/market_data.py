@@ -12,6 +12,7 @@ from ..domain.models import (
 )
 from .exchange_rates import build_exchange_snapshots
 from .providers.cnbc import CNBC_FX_SYMBOLS, CNBC_MARKET_SYMBOLS, fetch_cnbc_data
+from .providers.fred import FredSeriesDefinition, fetch_fred_snapshot
 from .snapshots import build_snapshot
 
 
@@ -22,32 +23,84 @@ YF_TICKERS = {
     "indices_domestic": (
         TickerDefinition("KOSPI", "^KS11"),
         TickerDefinition("KOSDAQ", "^KQ11"),
+        TickerDefinition("KOSPI200", "^KS200"),
     ),
     "indices_overseas": (
         TickerDefinition("S&P 500", "^GSPC"),
+        TickerDefinition("Nasdaq 100", "^NDX"),
         TickerDefinition("Nasdaq", "^IXIC"),
+        TickerDefinition("Dow", "^DJI"),
+        TickerDefinition("Russell 2000", "^RUT"),
         TickerDefinition("Euro Stoxx 50", "^STOXX50E"),
         TickerDefinition("Nikkei 225", "^N225"),
         TickerDefinition("Hang Seng", "^HSI"),
         TickerDefinition("Shanghai Composite", "000001.SS"),
     ),
+    "futures": (
+        TickerDefinition("S&P 500 Futures", "ES=F"),
+        TickerDefinition("Nasdaq 100 Futures", "NQ=F"),
+        TickerDefinition("Dow Futures", "YM=F"),
+        TickerDefinition("Russell 2000 Futures", "RTY=F"),
+    ),
+    "sectors_us": (
+        TickerDefinition("US Semiconductors", "SMH"),
+        TickerDefinition("US Big Tech", "QQQ"),
+        TickerDefinition("US Financials", "XLF"),
+    ),
+    "sectors_kr": (
+        TickerDefinition("Korea Semiconductors", "091160.KS"),
+        TickerDefinition("Korea Battery", "305720.KS"),
+        TickerDefinition("Korea Bio", "244580.KS"),
+        TickerDefinition("Korea Auto", "091180.KS"),
+        TickerDefinition("Korea Financials", "091170.KS"),
+    ),
     "commodities_rates": (
+        TickerDefinition("WTI Crude Oil", "CL=F"),
+        TickerDefinition("Brent Crude Oil", "BZ=F"),
         TickerDefinition("Gold", "GC=F"),
         TickerDefinition("Silver", "SI=F"),
         TickerDefinition("Copper", "HG=F"),
         TickerDefinition("US 10Y Treasury", "^TNX", value_format=ValueFormat.YIELD_3),
     ),
+    "exchange": (
+        TickerDefinition("DXY", "DX-Y.NYB"),
+    ),
     "crypto": (
         TickerDefinition("Bitcoin", "BTC-USD"),
         TickerDefinition("Ethereum", "ETH-USD"),
     ),
-    "volatility": (TickerDefinition("VIX", "^VIX"),),
+    "volatility": (
+        TickerDefinition("VIX", "^VIX"),
+        TickerDefinition("MOVE", "^MOVE"),
+    ),
 }
 
 YF_RATES_HISTORY = {
     "USD/KRW": "KRW=X",
     "JPY/KRW": "JPYKRW=X",
     "EUR/KRW": "EURKRW=X",
+}
+
+FRED_SERIES = {
+    "commodities_rates": (
+        FredSeriesDefinition(
+            "US 2Y Treasury",
+            "DGS2",
+            value_format=ValueFormat.YIELD_3,
+        ),
+        FredSeriesDefinition(
+            "US 10Y-2Y Spread",
+            "T10Y2Y",
+            value_format=ValueFormat.YIELD_3,
+        ),
+    ),
+    "risk": (
+        FredSeriesDefinition(
+            "US High Yield Spread",
+            "BAMLH0A0HYM2",
+            value_format=ValueFormat.YIELD_3,
+        ),
+    ),
 }
 
 
@@ -64,6 +117,7 @@ def fetch_all_data() -> ReportDataset:
 
     logger.info("Fetching Yahoo Finance data...")
     _append_yahoo_snapshots(results)
+    _append_fred_snapshots(results)
     _reorder_bond_snapshots(results["commodities_rates"])
 
     logger.info(
@@ -78,9 +132,13 @@ def _empty_report_dataset() -> ReportDataset:
     return {
         "indices_domestic": [],
         "indices_overseas": [],
+        "futures": [],
+        "sectors_us": [],
+        "sectors_kr": [],
         "volatility": [],
         "commodities_rates": [],
         "exchange": [],
+        "risk": [],
         "crypto": [],
     }
 
@@ -156,6 +214,15 @@ def _append_yahoo_snapshots(results: ReportDataset) -> None:
                 )
             except Exception as exc:
                 logger.error("Error fetching YF %s: %s", definition.name, exc)
+
+
+def _append_fred_snapshots(results: ReportDataset) -> None:
+    logger.info("Fetching FRED data...")
+    for category, definitions in FRED_SERIES.items():
+        for definition in definitions:
+            snapshot = fetch_fred_snapshot(definition)
+            if snapshot is not None:
+                results[category].append(snapshot)
 
 
 def _reorder_bond_snapshots(commodities_rates) -> None:
