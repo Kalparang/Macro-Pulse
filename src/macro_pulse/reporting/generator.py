@@ -77,12 +77,17 @@ def generate_telegram_summary(data, mode="Global", format_config=None):
 
     mode_format = get_mode_format(mode, format_config or load_report_format_config())
     lines = []
-    for index, section in enumerate(mode_format.summary_sections):
-        lines.append(f"[{section.title}]")
-        for item in get_items(section.category, section.items):
-            lines.append(format_line(item))
-        if index < len(mode_format.summary_sections) - 1:
+    for section in mode_format.summary_sections:
+        section_items = get_items(section.category, section.items)
+        if not section_items:
+            continue
+
+        if lines:
             lines.append("")
+
+        lines.append(f"[{section.title}]")
+        for item in section_items:
+            lines.append(format_line(item))
 
     return "\n".join(lines)
 

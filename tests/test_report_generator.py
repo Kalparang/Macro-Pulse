@@ -68,3 +68,39 @@ class ReportGeneratorTests(unittest.TestCase):
         summary = generate_telegram_summary(data, "US", config)
 
         self.assertEqual(summary, "[채권]\nUS 10Y Treasury: 4.321 (-0.28%)")
+
+    def test_generate_telegram_summary_skips_empty_sections(self):
+        data = {
+            "commodities_rates": [
+                AssetSnapshot(
+                    name="US 10Y Treasury",
+                    price=4.321,
+                    change=-0.012,
+                    change_pct=-0.28,
+                    value_format=ValueFormat.YIELD_3,
+                )
+            ],
+            "risk": [],
+        }
+        config = ReportFormatConfig(
+            modes={
+                "US": ModeFormatConfig(
+                    summary_sections=[
+                        SummarySectionConfig(
+                            title="Credit",
+                            category="risk",
+                            items=["US High Yield Spread"],
+                        ),
+                        SummarySectionConfig(
+                            title="Rates",
+                            category="commodities_rates",
+                            items=["US 10Y Treasury"],
+                        ),
+                    ]
+                )
+            }
+        )
+
+        summary = generate_telegram_summary(data, "US", config)
+
+        self.assertEqual(summary, "[Rates]\nUS 10Y Treasury: 4.321 (-0.28%)")
