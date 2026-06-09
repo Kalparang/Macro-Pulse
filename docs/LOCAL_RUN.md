@@ -24,10 +24,12 @@ uv sync --all-groups
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
 DISCORD_WEBHOOK_URL=your_discord_webhook_url_here
+PAGES_REPORT_URL=https://your-github-username.github.io/your-repository/
 ```
 
 - 텔레그램 값이 없으면 텔레그램 전송은 건너뜁니다.
 - 디스코드 값이 없으면 디스코드 전송은 건너뜁니다.
+- `PAGES_REPORT_URL`이 있으면 전송 요약 하단에 웹 리포트 링크를 붙입니다.
 
 ### 리포트만 생성
 

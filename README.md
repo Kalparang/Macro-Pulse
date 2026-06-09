@@ -62,8 +62,9 @@ Fork해서 바로 쓰려면 아래만 먼저 설정하면 됩니다.
 
 1. Fork한 저장소의 `Actions` 탭에서 워크플로를 활성화합니다.
 2. `Settings > Secrets and variables > Actions`에서 Telegram 또는 Discord Secret을 등록합니다.
-3. 웹 리포트도 보고 싶다면 `Settings > Pages`에서 source를 `GitHub Actions`로 설정합니다.
-4. 필요하면 [`config/report_formats.json`](config/report_formats.json)에서 KR/US 포맷과 스케줄을 바꿉니다.
+3. 웹에서 최신 HTML 리포트를 고정 URL로 보고 싶다면 `Settings > Pages`에서 source를 `GitHub Actions`로 설정합니다.
+4. 전송 메시지에 웹 리포트 링크를 붙이고 싶다면 `Settings > Secrets and variables > Actions > Variables`에 `PAGES_REPORT_URL`을 등록합니다.
+5. 필요하면 [`config/report_formats.json`](config/report_formats.json)에서 KR/US 포맷과 스케줄을 바꿉니다.
 
 ## 로컬 / Docker 실행
 

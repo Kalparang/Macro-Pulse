@@ -24,10 +24,12 @@ Create a `.env` file in the project root.
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
 DISCORD_WEBHOOK_URL=your_discord_webhook_url_here
+PAGES_REPORT_URL=https://your-github-username.github.io/your-repository/
 ```
 
 - If Telegram values are missing, Telegram delivery is skipped.
 - If the Discord value is missing, Discord delivery is skipped.
+- If `PAGES_REPORT_URL` is set, a web report link is appended to the delivery summary.
 
 ### Generate only the report
 

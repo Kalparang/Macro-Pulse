@@ -22,6 +22,13 @@ configure_logging()
 logger = get_logger(__name__)
 
 
+def append_report_link(summary: str, report_url: str | None) -> str:
+    normalized_url = (report_url or "").strip()
+    if not normalized_url:
+        return summary
+    return f"{summary}\n\n웹 리포트 보기: {normalized_url}"
+
+
 def resolve_mode(market_arg: str | None, now_utc: datetime | None = None) -> str:
     normalized = (market_arg or "").strip().upper()
     if normalized in {"KR", "US"}:
@@ -55,7 +62,10 @@ async def main(argv: list[str] | None = None) -> int:
 
     data = fetch_all_data()
     html_report = generate_html_report(data)
-    delivery_summary = generate_telegram_summary(data, mode, report_format_config)
+    delivery_summary = append_report_link(
+        generate_telegram_summary(data, mode, report_format_config),
+        os.environ.get("PAGES_REPORT_URL"),
+    )
     logger.info("Delivery Summary (%s):\n%s\n", mode, delivery_summary)
 
     output_path = Path("macro_pulse_report.html")

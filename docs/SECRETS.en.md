@@ -24,3 +24,11 @@ Path:
 
 - Secret names must match exactly.
 - Delivery platforms without configured secrets are skipped.
+
+## Optional
+
+### Web Report Link
+
+- `PAGES_REPORT_URL`: the GitHub Pages report URL appended to the Telegram/Discord summary
+- Because this is a public URL, prefer adding it as a repository variable under `Settings > Secrets and variables > Actions > Variables`.
+- Example: `https://your-github-username.github.io/your-repository/`

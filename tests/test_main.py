@@ -19,6 +19,15 @@ from macro_pulse.domain.models import (
 
 
 class MainTests(unittest.IsolatedAsyncioTestCase):
+    def test_append_report_link_adds_pages_url_when_configured(self):
+        self.assertEqual(
+            app_main.append_report_link("summary", "https://example.github.io/repo/"),
+            "summary\n\n웹 리포트 보기: https://example.github.io/repo/",
+        )
+
+    def test_append_report_link_skips_blank_pages_url(self):
+        self.assertEqual(app_main.append_report_link("summary", " "), "summary")
+
     def test_resolve_mode_uses_explicit_override(self):
         self.assertEqual(app_main.resolve_mode("kr"), "KR")
         self.assertEqual(app_main.resolve_mode("US"), "US")
@@ -71,6 +80,7 @@ class MainTests(unittest.IsolatedAsyncioTestCase):
                     "macro_pulse.app.cli.send_telegram_report",
                     new_callable=AsyncMock,
                 ) as telegram,
+                patch.dict(os.environ, {"PAGES_REPORT_URL": ""}, clear=False),
             ):
                 previous_cwd = os.getcwd()
                 os.chdir(temp_dir)
@@ -143,6 +153,7 @@ class MainTests(unittest.IsolatedAsyncioTestCase):
                         "TELEGRAM_BOT_TOKEN": "token",
                         "TELEGRAM_CHAT_ID": "chat-id",
                         "DISCORD_WEBHOOK_URL": "webhook-url",
+                        "PAGES_REPORT_URL": "https://example.github.io/report/",
                     },
                 ),
             ):
@@ -158,12 +169,12 @@ class MainTests(unittest.IsolatedAsyncioTestCase):
         telegram.assert_awaited_once_with(
             "token",
             "chat-id",
-            "summary",
+            "summary\n\n웹 리포트 보기: https://example.github.io/report/",
             image_paths=["map.png"],
         )
         discord.assert_awaited_once_with(
             "webhook-url",
-            "summary",
+            "summary\n\n웹 리포트 보기: https://example.github.io/report/",
             image_paths=["map.png"],
         )
         cleanup.assert_called_once_with(["map.png"])

@@ -66,8 +66,9 @@ If you want to use this project from your own fork, set up these items first.
 
 1. Open the `Actions` tab in your fork and enable workflows.
 2. Add the Telegram or Discord secrets in `Settings > Secrets and variables > Actions`.
-3. If you want the web report, enable `Settings > Pages` and set the source to `GitHub Actions`.
-4. If needed, edit [`config/report_formats.json`](../config/report_formats.json) for KR/US format and schedule changes.
+3. If you want a stable URL for the latest HTML report, enable `Settings > Pages` and set the source to `GitHub Actions`.
+4. If you want delivery messages to include the web report link, add `PAGES_REPORT_URL` under `Settings > Secrets and variables > Actions > Variables`.
+5. If needed, edit [`config/report_formats.json`](../config/report_formats.json) for KR/US format and schedule changes.
 
 ## Local / Docker Run
 
