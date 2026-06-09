@@ -30,9 +30,21 @@ class BlsSeriesDefinition:
 BLS_SERIES = {
     "macro_us": (
         BlsSeriesDefinition("US CPI Index", "CUSR0000SA0"),
-        BlsSeriesDefinition("US Unemployment Rate", "LNS14000000"),
-        BlsSeriesDefinition("US Nonfarm Payrolls", "CES0000000001"),
-        BlsSeriesDefinition("US Avg Hourly Earnings", "CES0500000003"),
+        BlsSeriesDefinition(
+            "US Unemployment Rate",
+            "LNS14000000",
+            value_format=ValueFormat.PERCENT_2,
+        ),
+        BlsSeriesDefinition(
+            "US Nonfarm Payrolls",
+            "CES0000000001",
+            value_format=ValueFormat.THOUSANDS_TO_MILLIONS_1,
+        ),
+        BlsSeriesDefinition(
+            "US Avg Hourly Earnings",
+            "CES0500000003",
+            value_format=ValueFormat.USD_2,
+        ),
     )
 }
 

@@ -8,6 +8,10 @@ from typing import Any, Mapping, Sequence
 class ValueFormat(StrEnum):
     STANDARD_2 = "standard_2"
     YIELD_3 = "yield_3"
+    PERCENT_2 = "percent_2"
+    COUNT_0 = "count_0"
+    USD_2 = "usd_2"
+    THOUSANDS_TO_MILLIONS_1 = "thousands_to_millions_1"
 
 
 @dataclass(slots=True, frozen=True)

@@ -7,7 +7,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from ...core.logging import get_logger
-from ...domain.models import ReportDataset
+from ...domain.models import ReportDataset, ValueFormat
 from ..cache import TtlCache
 from ..snapshots import build_snapshot
 from .base import ProviderOutput, get_env_token
@@ -59,9 +59,27 @@ def fetch_sec_data(
     periodic_count = sum(1 for filing in filings if filing["form"] in {"10-Q", "10-K"})
     dataset: ReportDataset = {
         "disclosures_us": [
-            build_snapshot("SEC Tracked Filings (7d)", len(filings), 0, 0),
-            build_snapshot("SEC 8-K Filings (7d)", eight_k_count, 0, 0),
-            build_snapshot("SEC 10-Q/K Filings (7d)", periodic_count, 0, 0),
+            build_snapshot(
+                "SEC Tracked Filings (7d)",
+                len(filings),
+                0,
+                0,
+                value_format=ValueFormat.COUNT_0,
+            ),
+            build_snapshot(
+                "SEC 8-K Filings (7d)",
+                eight_k_count,
+                0,
+                0,
+                value_format=ValueFormat.COUNT_0,
+            ),
+            build_snapshot(
+                "SEC 10-Q/K Filings (7d)",
+                periodic_count,
+                0,
+                0,
+                value_format=ValueFormat.COUNT_0,
+            ),
         ]
     }
     return ProviderOutput(dataset=dataset)

@@ -133,3 +133,75 @@ class ReportGeneratorTests(unittest.TestCase):
         summary = generate_telegram_summary(data, "US", config)
 
         self.assertEqual(summary, "[Rates]\nUS 10Y Treasury: 4.321 (-1bp)")
+
+    def test_generate_telegram_summary_formats_macro_units(self):
+        data = {
+            "macro_us": [
+                AssetSnapshot(
+                    name="US Unemployment Rate",
+                    price=4.3,
+                    change=0.1,
+                    value_format=ValueFormat.PERCENT_2,
+                ),
+                AssetSnapshot(
+                    name="US Nonfarm Payrolls",
+                    price=159001,
+                    change=175,
+                    change_pct=0.11,
+                    value_format=ValueFormat.THOUSANDS_TO_MILLIONS_1,
+                ),
+                AssetSnapshot(
+                    name="US Avg Hourly Earnings",
+                    price=37.53,
+                    change=0.12,
+                    change_pct=0.32,
+                    value_format=ValueFormat.USD_2,
+                ),
+            ],
+            "disclosures_us": [
+                AssetSnapshot(
+                    name="SEC Tracked Filings (7d)",
+                    price=30,
+                    value_format=ValueFormat.COUNT_0,
+                )
+            ],
+        }
+        config = ReportFormatConfig(
+            modes={
+                "US": ModeFormatConfig(
+                    summary_sections=[
+                        SummarySectionConfig(
+                            title="Macro",
+                            category="macro_us",
+                            items=[
+                                "US Unemployment Rate",
+                                "US Nonfarm Payrolls",
+                                "US Avg Hourly Earnings",
+                            ],
+                        ),
+                        SummarySectionConfig(
+                            title="SEC",
+                            category="disclosures_us",
+                            items=["SEC Tracked Filings (7d)"],
+                        ),
+                    ]
+                )
+            }
+        )
+
+        summary = generate_telegram_summary(data, "US", config)
+
+        self.assertEqual(
+            summary,
+            "\n".join(
+                [
+                    "[Macro]",
+                    "US Unemployment Rate: 4.30% (+0.10p)",
+                    "US Nonfarm Payrolls: 159.0M (+0.11%)",
+                    "US Avg Hourly Earnings: $37.53 (+0.32%)",
+                    "",
+                    "[SEC]",
+                    "SEC Tracked Filings (7d): 30건",
+                ]
+            ),
+        )

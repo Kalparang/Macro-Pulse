@@ -63,6 +63,8 @@ def generate_telegram_summary(data, mode="Global", format_config=None):
         price_str = _format_numeric(item.price, item.value_format)
         if item.value_format == ValueFormat.YIELD_3 and item.change not in (None, 0):
             return f"{item.name}: {price_str} ({item.change * 100:+,.0f}bp)"
+        if item.value_format == ValueFormat.PERCENT_2 and item.change not in (None, 0):
+            return f"{item.name}: {price_str} ({item.change:+,.2f}p)"
         if item.change_pct not in (None, 0):
             return f"{item.name}: {price_str} ({item.change_pct:+,.2f}%)"
         return f"{item.name}: {price_str}"
@@ -132,6 +134,14 @@ def _render_item(item) -> RenderedAssetSnapshot:
 def _format_numeric(value, value_format):
     if value is None:
         return ""
+    if value_format == ValueFormat.PERCENT_2:
+        return f"{value:,.2f}%"
+    if value_format == ValueFormat.COUNT_0:
+        return f"{value:,.0f}건"
+    if value_format == ValueFormat.USD_2:
+        return f"${value:,.2f}"
+    if value_format == ValueFormat.THOUSANDS_TO_MILLIONS_1:
+        return f"{value / 1000:,.1f}M"
     decimals = 3 if value_format == ValueFormat.YIELD_3 else 2
     return f"{value:,.{decimals}f}"
 
@@ -139,5 +149,13 @@ def _format_numeric(value, value_format):
 def _format_signed_numeric(value, value_format):
     if value is None:
         return ""
+    if value_format == ValueFormat.PERCENT_2:
+        return f"{value:+,.2f}p"
+    if value_format == ValueFormat.COUNT_0:
+        return f"{value:+,.0f}건"
+    if value_format == ValueFormat.USD_2:
+        return f"{value:+,.2f}"
+    if value_format == ValueFormat.THOUSANDS_TO_MILLIONS_1:
+        return f"{value / 1000:+,.1f}M"
     decimals = 3 if value_format == ValueFormat.YIELD_3 else 2
     return f"{value:+,.{decimals}f}"
