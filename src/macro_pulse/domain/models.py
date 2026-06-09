@@ -12,6 +12,8 @@ class ValueFormat(StrEnum):
     COUNT_0 = "count_0"
     USD_2 = "usd_2"
     THOUSANDS_TO_MILLIONS_1 = "thousands_to_millions_1"
+    KRW_EOK_0 = "krw_eok_0"
+    KRW_TRILLION_1 = "krw_trillion_1"
 
 
 @dataclass(slots=True, frozen=True)

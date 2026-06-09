@@ -110,13 +110,23 @@ def _empty_report_dataset() -> ReportDataset:
         "risk": [],
         "macro_us": [],
         "disclosures_us": [],
+        "market_breadth_kr": [],
+        "disclosures_kr": [],
         "crypto": [],
     }
 
 
 def _merge_dataset(target: ReportDataset, source: ReportDataset) -> None:
     for category, items in source.items():
-        target.setdefault(category, []).extend(items)
+        target_items = target.setdefault(category, [])
+        item_indexes = {item.name: index for index, item in enumerate(target_items)}
+        for item in items:
+            item_index = item_indexes.get(item.name)
+            if item_index is None:
+                item_indexes[item.name] = len(target_items)
+                target_items.append(item)
+                continue
+            target_items[item_index] = item
 
 
 def _merge_provider_output(target: ReportDataset, output: ProviderOutput) -> None:
