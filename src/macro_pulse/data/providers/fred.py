@@ -9,7 +9,8 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from ...core.logging import get_logger
-from ...domain.models import AssetSnapshot, ValueFormat
+from ...domain.models import AssetSnapshot, ReportDataset, ValueFormat
+from ..cache import TtlCache
 from ..snapshots import build_snapshot
 
 
@@ -24,6 +25,7 @@ REQUEST_HEADERS = {
     "Accept": "text/csv,*/*;q=0.8",
 }
 DEFAULT_LOOKBACK_DAYS = 90
+DEFAULT_FRED_CACHE_TTL_SECONDS = 60 * 60 * 12
 
 
 @dataclass(slots=True, frozen=True)
@@ -46,11 +48,21 @@ def fetch_fred_snapshot(
         start_date=start_date.isoformat(),
     )
 
+    cache = TtlCache()
+    cache_key = f"fred:csv:{definition.series_id}:{start_date.isoformat()}"
+    cached_text = cache.get_text(cache_key, DEFAULT_FRED_CACHE_TTL_SECONDS)
+    if cached_text:
+        try:
+            return parse_fred_snapshot(definition, cached_text)
+        except ValueError:
+            pass
+
     for attempt in range(1, attempts + 1):
         try:
             request = Request(url, headers=REQUEST_HEADERS)
             with urlopen(request, timeout=timeout) as response:
                 csv_text = response.read().decode("utf-8", "ignore")
+            cache.set_text(cache_key, csv_text)
             return parse_fred_snapshot(definition, csv_text)
         except (HTTPError, URLError, TimeoutError, ValueError) as exc:
             if attempt == attempts:
@@ -71,6 +83,21 @@ def fetch_fred_snapshot(
             sleep(retry_delay)
 
     return None
+
+
+def fetch_fred_snapshots(
+    series_groups: dict[str, tuple[FredSeriesDefinition, ...]],
+) -> ReportDataset:
+    logger.info("Fetching FRED data...")
+    results: ReportDataset = {}
+    for category, definitions in series_groups.items():
+        snapshots = []
+        for definition in definitions:
+            snapshot = fetch_fred_snapshot(definition)
+            if snapshot is not None:
+                snapshots.append(snapshot)
+        results[category] = snapshots
+    return results
 
 
 def parse_fred_snapshot(

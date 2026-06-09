@@ -71,7 +71,7 @@ class ExchangeRateCalculationTests(unittest.TestCase):
             ),
         },
     )
-    @patch("macro_pulse.data.market_data.yf.Ticker")
+    @patch("macro_pulse.data.providers.yahoo.yf.Ticker")
     def test_fetch_all_data_builds_expected_exchange_results(
         self,
         mock_ticker,

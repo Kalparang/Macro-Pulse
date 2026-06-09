@@ -18,6 +18,76 @@ class TickerDefinition:
 
 
 @dataclass(slots=True, frozen=True)
+class MarketSnapshot:
+    category: str
+    name: str
+    price: float | None = None
+    change: float | None = None
+    change_pct: float | None = None
+    history: list[float] = field(default_factory=list)
+    ticker: str | None = None
+    dates: list[str] = field(default_factory=list)
+    value_format: ValueFormat = ValueFormat.STANDARD_2
+
+    def to_asset_snapshot(self) -> "AssetSnapshot":
+        return AssetSnapshot(
+            name=self.name,
+            price=self.price,
+            change=self.change,
+            change_pct=self.change_pct,
+            history=list(self.history),
+            ticker=self.ticker,
+            dates=list(self.dates),
+            value_format=self.value_format,
+        )
+
+
+@dataclass(slots=True, frozen=True)
+class MacroSeries:
+    name: str
+    source: str
+    value: float | None = None
+    change: float | None = None
+    unit: str = ""
+    date: str = ""
+    history: list[float] = field(default_factory=list)
+    dates: list[str] = field(default_factory=list)
+
+
+@dataclass(slots=True, frozen=True)
+class EventItem:
+    title: str
+    source: str
+    date: str
+    region: str = ""
+    importance: str = ""
+    previous: str = ""
+    consensus: str = ""
+    actual: str = ""
+
+
+@dataclass(slots=True, frozen=True)
+class DisclosureItem:
+    title: str
+    source: str
+    published_at: str
+    issuer: str = ""
+    ticker: str = ""
+    url: str = ""
+    summary: str = ""
+
+
+@dataclass(slots=True, frozen=True)
+class FlowSnapshot:
+    name: str
+    source: str
+    value: float | None = None
+    change: float | None = None
+    unit: str = ""
+    category: str = ""
+
+
+@dataclass(slots=True, frozen=True)
 class CnbcQuote:
     price: float
     change: float
