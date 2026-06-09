@@ -23,7 +23,7 @@ class FakeTicker:
         self.frames = list(frames)
         self.calls = 0
 
-    def history(self, period):
+    def history(self, period, interval=None):
         frame = self.frames[min(self.calls, len(self.frames) - 1)]
         self.calls += 1
         return frame
@@ -67,6 +67,29 @@ class YahooProviderTests(unittest.TestCase):
         self.assertIsNotNone(snapshot)
         self.assertEqual(snapshot.price, 3010.0)
         self.assertEqual(snapshot.change, 10.0)
+
+    def test_fetch_yahoo_snapshot_prefers_current_intraday_price(self):
+        daily_frame = pd.DataFrame(
+            {"Close": [7000.0, 7484.41]},
+            index=pd.to_datetime(["2026-06-08", "2026-06-09"]),
+        )
+        intraday_frame = pd.DataFrame(
+            {"Close": [8096.93]},
+            index=pd.to_datetime(["2026-06-10 15:30:00"]),
+        )
+
+        with patch.object(
+            yahoo.yf,
+            "Ticker",
+            return_value=FakeTicker([daily_frame, intraday_frame]),
+        ):
+            snapshot = yahoo.fetch_yahoo_snapshot(TickerDefinition("KOSPI", "^KS11"))
+
+        self.assertIsNotNone(snapshot)
+        self.assertEqual(snapshot.price, 8096.93)
+        self.assertAlmostEqual(snapshot.change, 612.52)
+        self.assertAlmostEqual(snapshot.change_pct, 8.183945027062927)
+        self.assertEqual(snapshot.history[-1], 8096.93)
 
 
 if __name__ == "__main__":

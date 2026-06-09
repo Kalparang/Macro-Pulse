@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+from math import isclose
 
 import yfinance as yf
 
@@ -13,6 +14,8 @@ from ..snapshots import build_snapshot
 logger = get_logger(__name__)
 
 YF_HISTORY_PERIODS = ("1mo", "3mo", "1y")
+YF_INTRADAY_PERIOD = "5d"
+YF_INTRADAY_INTERVAL = "1m"
 
 
 YF_TICKERS = {
@@ -125,21 +128,20 @@ def fetch_yahoo_snapshot(definition: TickerDefinition):
             return None
 
         close_prices = data["Close"].dropna()
-        last_price = float(close_prices.iloc[-1])
-        if len(close_prices) > 1:
-            previous_price = float(close_prices.iloc[-2])
-            change = last_price - previous_price
-            change_pct = (change / previous_price) * 100 if previous_price else 0.0
-        else:
-            change = 0.0
-            change_pct = 0.0
+        intraday_latest = fetch_yahoo_intraday_latest(definition.symbol)
+        last_price, previous_price = resolve_latest_and_previous_close(
+            close_prices,
+            intraday_latest,
+        )
+        change = last_price - previous_price if previous_price is not None else 0.0
+        change_pct = (change / previous_price) * 100 if previous_price else 0.0
 
         return build_snapshot(
             definition.name,
             last_price,
             change,
             change_pct,
-            history=close_prices.tail(7).tolist(),
+            history=build_snapshot_history(close_prices, last_price),
             ticker=definition.symbol,
             dates=[date.strftime("%m-%d") for date in close_prices.tail(7).index],
             value_format=definition.value_format,
@@ -177,3 +179,57 @@ def fetch_yahoo_history(symbol: str):
 
     logger.error("Yahoo Finance returned no usable close prices for %s", symbol)
     return None
+
+
+def fetch_yahoo_intraday_latest(symbol: str) -> tuple[object, float] | None:
+    try:
+        data = yf.Ticker(symbol).history(
+            period=YF_INTRADAY_PERIOD,
+            interval=YF_INTRADAY_INTERVAL,
+        )
+    except Exception as exc:
+        logger.warning("Yahoo Finance intraday fetch failed for %s: %s", symbol, exc)
+        return None
+
+    if data.empty or "Close" not in data:
+        return None
+
+    close_prices = data["Close"].dropna()
+    if close_prices.empty:
+        return None
+
+    return close_prices.index[-1], float(close_prices.iloc[-1])
+
+
+def resolve_latest_and_previous_close(close_prices, intraday_latest):
+    daily_latest_timestamp = close_prices.index[-1]
+    daily_latest_price = float(close_prices.iloc[-1])
+
+    if intraday_latest is not None:
+        intraday_timestamp, intraday_price = intraday_latest
+        if _market_date(intraday_timestamp) >= _market_date(daily_latest_timestamp):
+            previous_price = daily_latest_price
+            if (
+                _market_date(intraday_timestamp) == _market_date(daily_latest_timestamp)
+                and isclose(intraday_price, daily_latest_price, rel_tol=1e-9)
+                and len(close_prices) > 1
+            ):
+                previous_price = float(close_prices.iloc[-2])
+            return intraday_price, previous_price
+
+    if len(close_prices) > 1:
+        return daily_latest_price, float(close_prices.iloc[-2])
+    return daily_latest_price, None
+
+
+def build_snapshot_history(close_prices, latest_price: float) -> list[float]:
+    history = close_prices.tail(7).tolist()
+    if not history:
+        return [latest_price]
+    if not isclose(float(history[-1]), latest_price, rel_tol=1e-9):
+        history = [*history[-6:], latest_price]
+    return history
+
+
+def _market_date(timestamp) -> object:
+    return timestamp.date() if hasattr(timestamp, "date") else timestamp
