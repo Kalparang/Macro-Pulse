@@ -61,6 +61,8 @@ def generate_telegram_summary(data, mode="Global", format_config=None):
             return f"{item.name}: N/A"
 
         price_str = _format_numeric(item.price, item.value_format)
+        if item.value_format == ValueFormat.YIELD_3 and item.change not in (None, 0):
+            return f"{item.name}: {price_str} ({item.change * 100:+,.0f}bp)"
         if item.change_pct not in (None, 0):
             return f"{item.name}: {price_str} ({item.change_pct:+,.2f}%)"
         return f"{item.name}: {price_str}"
