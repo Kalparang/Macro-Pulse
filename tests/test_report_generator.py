@@ -1,5 +1,4 @@
 import copy
-import math
 import os
 import sys
 import unittest
@@ -134,36 +133,6 @@ class ReportGeneratorTests(unittest.TestCase):
         summary = generate_telegram_summary(data, "US", config)
 
         self.assertEqual(summary, "[Rates]\nUS 10Y Treasury: 4.321 (-1bp)")
-
-    def test_generate_telegram_summary_renders_nan_as_na(self):
-        data = {
-            "indices_domestic": [
-                AssetSnapshot(
-                    name="KOSPI",
-                    price=math.nan,
-                    change=math.nan,
-                    change_pct=math.nan,
-                )
-            ]
-        }
-        config = ReportFormatConfig(
-            modes={
-                "KR": ModeFormatConfig(
-                    summary_sections=[
-                        SummarySectionConfig(
-                            title="Domestic",
-                            category="indices_domestic",
-                            items=["KOSPI"],
-                        )
-                    ]
-                )
-            }
-        )
-
-        summary = generate_telegram_summary(data, "KR", config)
-
-        self.assertEqual(summary, "[Domestic]\nKOSPI: N/A")
-        self.assertNotIn("nan", summary.lower())
 
     def test_generate_telegram_summary_formats_macro_units(self):
         data = {

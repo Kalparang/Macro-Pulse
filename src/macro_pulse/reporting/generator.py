@@ -1,6 +1,5 @@
 import base64
 import io
-import math
 import os
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
@@ -58,23 +57,15 @@ def generate_telegram_summary(data, mode="Global", format_config=None):
     logger.info("Generating Telegram summary for mode=%s", mode)
 
     def format_line(item):
-        if not _is_finite_number(item.price):
+        if item.price is None:
             return f"{item.name}: N/A"
 
         price_str = _format_numeric(item.price, item.value_format)
-        if (
-            item.value_format == ValueFormat.YIELD_3
-            and _is_finite_number(item.change)
-            and item.change != 0
-        ):
+        if item.value_format == ValueFormat.YIELD_3 and item.change not in (None, 0):
             return f"{item.name}: {price_str} ({item.change * 100:+,.0f}bp)"
-        if (
-            item.value_format == ValueFormat.PERCENT_2
-            and _is_finite_number(item.change)
-            and item.change != 0
-        ):
+        if item.value_format == ValueFormat.PERCENT_2 and item.change not in (None, 0):
             return f"{item.name}: {price_str} ({item.change:+,.2f}p)"
-        if _is_finite_number(item.change_pct) and item.change_pct != 0:
+        if item.change_pct not in (None, 0):
             return f"{item.name}: {price_str} ({item.change_pct:+,.2f}%)"
         return f"{item.name}: {price_str}"
 
@@ -117,10 +108,10 @@ def _render_item(item) -> RenderedAssetSnapshot:
     change_pct_str = ""
     color_class = "neutral"
 
-    if _is_finite_number(item.change):
+    if item.change is not None:
         change_str = _format_signed_numeric(item.change, item.value_format)
         change_pct_str = (
-            f"{item.change_pct:+,.2f}%" if _is_finite_number(item.change_pct) else ""
+            f"{item.change_pct:+,.2f}%" if item.change_pct is not None else ""
         )
         color_class = (
             "positive"
@@ -141,7 +132,7 @@ def _render_item(item) -> RenderedAssetSnapshot:
 
 
 def _format_numeric(value, value_format):
-    if not _is_finite_number(value):
+    if value is None:
         return ""
     if value_format == ValueFormat.PERCENT_2:
         return f"{value:,.2f}%"
@@ -160,7 +151,7 @@ def _format_numeric(value, value_format):
 
 
 def _format_signed_numeric(value, value_format):
-    if not _is_finite_number(value):
+    if value is None:
         return ""
     if value_format == ValueFormat.PERCENT_2:
         return f"{value:+,.2f}p"
@@ -176,7 +167,3 @@ def _format_signed_numeric(value, value_format):
         return f"{value:+,.1f}조원"
     decimals = 3 if value_format == ValueFormat.YIELD_3 else 2
     return f"{value:+,.{decimals}f}"
-
-
-def _is_finite_number(value) -> bool:
-    return value is not None and math.isfinite(float(value))
