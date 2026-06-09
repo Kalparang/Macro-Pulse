@@ -27,7 +27,8 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-      
+      PAGES_REPORT_URL: ${{ vars.PAGES_REPORT_URL || secrets.PAGES_REPORT_URL }}
+            
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
@@ -50,6 +51,7 @@ jobs:
           -e TELEGRAM_BOT_TOKEN \
           -e TELEGRAM_CHAT_ID \
           -e DISCORD_WEBHOOK_URL \
+          -e PAGES_REPORT_URL \
           -v "$PWD:/app" \
           -w /app \
           macro-pulse:daily \
