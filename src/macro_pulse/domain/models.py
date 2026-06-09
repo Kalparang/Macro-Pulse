@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, Mapping, Sequence
@@ -9,10 +8,6 @@ from typing import Any, Mapping, Sequence
 class ValueFormat(StrEnum):
     STANDARD_2 = "standard_2"
     YIELD_3 = "yield_3"
-    PERCENT_2 = "percent_2"
-    COUNT_0 = "count_0"
-    USD_2 = "usd_2"
-    THOUSANDS_TO_MILLIONS_1 = "thousands_to_millions_1"
 
 
 @dataclass(slots=True, frozen=True)
@@ -20,76 +15,6 @@ class TickerDefinition:
     name: str
     symbol: str
     value_format: ValueFormat = ValueFormat.STANDARD_2
-
-
-@dataclass(slots=True, frozen=True)
-class MarketSnapshot:
-    category: str
-    name: str
-    price: float | None = None
-    change: float | None = None
-    change_pct: float | None = None
-    history: list[float] = field(default_factory=list)
-    ticker: str | None = None
-    dates: list[str] = field(default_factory=list)
-    value_format: ValueFormat = ValueFormat.STANDARD_2
-
-    def to_asset_snapshot(self) -> "AssetSnapshot":
-        return AssetSnapshot(
-            name=self.name,
-            price=self.price,
-            change=self.change,
-            change_pct=self.change_pct,
-            history=list(self.history),
-            ticker=self.ticker,
-            dates=list(self.dates),
-            value_format=self.value_format,
-        )
-
-
-@dataclass(slots=True, frozen=True)
-class MacroSeries:
-    name: str
-    source: str
-    value: float | None = None
-    change: float | None = None
-    unit: str = ""
-    date: str = ""
-    history: list[float] = field(default_factory=list)
-    dates: list[str] = field(default_factory=list)
-
-
-@dataclass(slots=True, frozen=True)
-class EventItem:
-    title: str
-    source: str
-    date: str
-    region: str = ""
-    importance: str = ""
-    previous: str = ""
-    consensus: str = ""
-    actual: str = ""
-
-
-@dataclass(slots=True, frozen=True)
-class DisclosureItem:
-    title: str
-    source: str
-    published_at: str
-    issuer: str = ""
-    ticker: str = ""
-    url: str = ""
-    summary: str = ""
-
-
-@dataclass(slots=True, frozen=True)
-class FlowSnapshot:
-    name: str
-    source: str
-    value: float | None = None
-    change: float | None = None
-    unit: str = ""
-    category: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -315,18 +240,8 @@ def coerce_exchange_rates(
 def _coerce_optional_float(value: Any) -> float | None:
     if value is None:
         return None
-    normalized_value = float(value)
-    if not math.isfinite(normalized_value):
-        return None
-    return normalized_value
+    return float(value)
 
 
 def _coerce_float_list(values: Sequence[Any]) -> list[float]:
-    normalized_values = []
-    for value in values:
-        if value is None:
-            continue
-        normalized_value = float(value)
-        if math.isfinite(normalized_value):
-            normalized_values.append(normalized_value)
-    return normalized_values
+    return [float(value) for value in values]

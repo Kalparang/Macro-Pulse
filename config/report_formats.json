@@ -1,7 +1,7 @@
 {
   "modes": {
     "KR": {
-      "description": "Korean market close summary focused on domestic indices, futures, key sectors, FX, rates, and risk context.",
+      "description": "Korean market close summary focused on domestic indices, Asia peers, local bond context, and FX.",
       "workflow_schedule": {
         "cron": "00 08 * * 1-5",
         "local_time": "17:00 KST",
@@ -10,56 +10,35 @@
       },
       "summary_sections": [
         {
-          "title": "\uad6d\ub0b4 \uc99d\uc2dc",
+          "title": "국내 증시",
           "category": "indices_domestic",
-          "items": ["KOSPI", "KOSDAQ", "KOSPI200"]
+          "items": ["KOSPI", "KOSDAQ"]
         },
         {
-          "title": "\uc120\ubb3c",
-          "category": "futures",
-          "items": ["S&P 500 Futures", "Nasdaq 100 Futures"]
-        },
-        {
-          "title": "\uc5c5\uc885",
-          "category": "sectors_kr",
-          "items": [
-            "Korea Semiconductors",
-            "Korea Battery",
-            "Korea Auto",
-            "Korea Bio",
-            "Korea Financials"
-          ]
-        },
-        {
-          "title": "\ud658\uc728",
-          "category": "exchange",
-          "items": ["USD/KRW", "DXY", "JPY/KRW", "CNY/KRW"]
-        },
-        {
-          "title": "\ucc44\uad8c, \uc6d0\uc790\uc7ac",
-          "category": "commodities_rates",
-          "items": [
-            "Korea 10Y Treasury",
-            "US 10Y Treasury",
-            "WTI Crude Oil",
-            "Copper"
-          ]
-        },
-        {
-          "title": "\ub9ac\uc2a4\ud06c",
-          "category": "volatility",
-          "items": ["VKOSPI", "VIX", "MOVE"]
-        },
-        {
-          "title": "\ud574\uc678 \uc99d\uc2dc",
+          "title": "해외 증시",
           "category": "indices_overseas",
           "items": ["Nikkei 225", "Hang Seng", "Shanghai Composite"]
+        },
+        {
+          "title": "변동성",
+          "category": "volatility",
+          "items": ["VKOSPI", "VIX"]
+        },
+        {
+          "title": "채권",
+          "category": "commodities_rates",
+          "items": ["Japan 10Y Treasury", "Korea 10Y Treasury"]
+        },
+        {
+          "title": "환율",
+          "category": "exchange",
+          "items": ["USD/KRW", "JPY/KRW"]
         }
       ],
       "screenshot_targets": ["kospi", "kosdaq"]
     },
     "US": {
-      "description": "US market close summary focused on major indices, futures, sectors, rates, commodities, risk, FX, and crypto.",
+      "description": "US market close summary focused on US and European indices, commodities, crypto, and broad risk assets.",
       "workflow_schedule": {
         "cron": "30 21 * * 1-5",
         "local_time": "06:30 KST",
@@ -68,81 +47,27 @@
       },
       "summary_sections": [
         {
-          "title": "\ud574\uc678 \uc99d\uc2dc",
+          "title": "해외 증시",
           "category": "indices_overseas",
-          "items": [
-            "S&P 500",
-            "Nasdaq 100",
-            "Nasdaq",
-            "Dow",
-            "Russell 2000",
-            "Euro Stoxx 50"
-          ]
+          "items": ["S&P 500", "Nasdaq", "Euro Stoxx 50"]
         },
         {
-          "title": "\uc120\ubb3c",
-          "category": "futures",
-          "items": [
-            "S&P 500 Futures",
-            "Nasdaq 100 Futures",
-            "Dow Futures",
-            "Russell 2000 Futures"
-          ]
-        },
-        {
-          "title": "\uc5c5\uc885",
-          "category": "sectors_us",
-          "items": ["US Semiconductors", "US Big Tech", "US Financials"]
-        },
-        {
-          "title": "\ucc44\uad8c, \uc6d0\uc790\uc7ac",
-          "category": "commodities_rates",
-          "items": [
-            "US 2Y Treasury",
-            "US 10Y Treasury",
-            "US 10Y-2Y Spread",
-            "WTI Crude Oil",
-            "Brent Crude Oil",
-            "Gold",
-            "Copper"
-          ]
-        },
-        {
-          "title": "\ud658\uc728",
-          "category": "exchange",
-          "items": ["DXY", "USD/KRW", "JPY/KRW"]
-        },
-        {
-          "title": "\ubbf8\uad6d \uacbd\uc81c",
-          "category": "macro_us",
-          "items": [
-            "US CPI Index",
-            "US Unemployment Rate",
-            "US Nonfarm Payrolls",
-            "US Avg Hourly Earnings"
-          ]
-        },
-        {
-          "title": "\ub9ac\uc2a4\ud06c",
+          "title": "변동성",
           "category": "volatility",
-          "items": ["VIX", "MOVE"]
+          "items": ["VKOSPI", "VIX"]
         },
         {
-          "title": "\uc2e0\uc6a9",
-          "category": "risk",
-          "items": ["US High Yield Spread"]
+          "title": "채권, 원자재",
+          "category": "commodities_rates",
+          "items": ["US 10Y Treasury", "Gold", "Silver", "Copper"]
         },
         {
-          "title": "SEC \uacf5\uc2dc",
-          "category": "disclosures_us",
-          "items": [
-            "SEC Tracked Filings (7d)",
-            "SEC 8-K Filings (7d)",
-            "SEC 10-Q/K Filings (7d)"
-          ]
+          "title": "환율",
+          "category": "exchange",
+          "items": ["USD/KRW", "JPY/KRW"]
         },
         {
-          "title": "\uc554\ud638\ud654\ud3d0",
+          "title": "암호화폐",
           "category": "crypto",
           "items": ["Bitcoin", "Ethereum"]
         }

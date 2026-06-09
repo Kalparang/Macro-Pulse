@@ -1,6 +1,5 @@
 import base64
 import io
-import math
 import os
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
@@ -58,23 +57,11 @@ def generate_telegram_summary(data, mode="Global", format_config=None):
     logger.info("Generating Telegram summary for mode=%s", mode)
 
     def format_line(item):
-        if not _is_finite_number(item.price):
+        if item.price is None:
             return f"{item.name}: N/A"
 
         price_str = _format_numeric(item.price, item.value_format)
-        if (
-            item.value_format == ValueFormat.YIELD_3
-            and _is_finite_number(item.change)
-            and item.change != 0
-        ):
-            return f"{item.name}: {price_str} ({item.change * 100:+,.0f}bp)"
-        if (
-            item.value_format == ValueFormat.PERCENT_2
-            and _is_finite_number(item.change)
-            and item.change != 0
-        ):
-            return f"{item.name}: {price_str} ({item.change:+,.2f}p)"
-        if _is_finite_number(item.change_pct) and item.change_pct != 0:
+        if item.change_pct not in (None, 0):
             return f"{item.name}: {price_str} ({item.change_pct:+,.2f}%)"
         return f"{item.name}: {price_str}"
 
@@ -90,17 +77,12 @@ def generate_telegram_summary(data, mode="Global", format_config=None):
 
     mode_format = get_mode_format(mode, format_config or load_report_format_config())
     lines = []
-    for section in mode_format.summary_sections:
-        section_items = get_items(section.category, section.items)
-        if not section_items:
-            continue
-
-        if lines:
-            lines.append("")
-
+    for index, section in enumerate(mode_format.summary_sections):
         lines.append(f"[{section.title}]")
-        for item in section_items:
+        for item in get_items(section.category, section.items):
             lines.append(format_line(item))
+        if index < len(mode_format.summary_sections) - 1:
+            lines.append("")
 
     return "\n".join(lines)
 
@@ -117,10 +99,10 @@ def _render_item(item) -> RenderedAssetSnapshot:
     change_pct_str = ""
     color_class = "neutral"
 
-    if _is_finite_number(item.change):
+    if item.change is not None:
         change_str = _format_signed_numeric(item.change, item.value_format)
         change_pct_str = (
-            f"{item.change_pct:+,.2f}%" if _is_finite_number(item.change_pct) else ""
+            f"{item.change_pct:+,.2f}%" if item.change_pct is not None else ""
         )
         color_class = (
             "positive"
@@ -141,34 +123,14 @@ def _render_item(item) -> RenderedAssetSnapshot:
 
 
 def _format_numeric(value, value_format):
-    if not _is_finite_number(value):
+    if value is None:
         return ""
-    if value_format == ValueFormat.PERCENT_2:
-        return f"{value:,.2f}%"
-    if value_format == ValueFormat.COUNT_0:
-        return f"{value:,.0f}건"
-    if value_format == ValueFormat.USD_2:
-        return f"${value:,.2f}"
-    if value_format == ValueFormat.THOUSANDS_TO_MILLIONS_1:
-        return f"{value / 1000:,.1f}M"
     decimals = 3 if value_format == ValueFormat.YIELD_3 else 2
     return f"{value:,.{decimals}f}"
 
 
 def _format_signed_numeric(value, value_format):
-    if not _is_finite_number(value):
+    if value is None:
         return ""
-    if value_format == ValueFormat.PERCENT_2:
-        return f"{value:+,.2f}p"
-    if value_format == ValueFormat.COUNT_0:
-        return f"{value:+,.0f}건"
-    if value_format == ValueFormat.USD_2:
-        return f"{value:+,.2f}"
-    if value_format == ValueFormat.THOUSANDS_TO_MILLIONS_1:
-        return f"{value / 1000:+,.1f}M"
     decimals = 3 if value_format == ValueFormat.YIELD_3 else 2
     return f"{value:+,.{decimals}f}"
-
-
-def _is_finite_number(value) -> bool:
-    return value is not None and math.isfinite(float(value))

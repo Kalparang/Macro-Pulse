@@ -1,93 +1,69 @@
-import math
-from concurrent.futures import ThreadPoolExecutor
+import os
+import tempfile
+
+import yfinance as yf
 
 from ..core.logging import get_logger
 from ..domain.models import (
     ReportDataset,
+    TickerDefinition,
     ValueFormat,
     coerce_cnbc_quote,
 )
 from .exchange_rates import build_exchange_snapshots
 from .providers.cnbc import CNBC_FX_SYMBOLS, CNBC_MARKET_SYMBOLS, fetch_cnbc_data
-from .providers.fred import FredSeriesDefinition, fetch_fred_snapshots
-from .providers.base import ProviderOutput
-from .providers.bls import fetch_bls_data
-from .providers.bea import fetch_bea_data
-from .providers.ecos import fetch_ecos_data
-from .providers.kosis import fetch_kosis_data
-from .providers.krx import fetch_krx_data
-from .providers.opendart import fetch_opendart_data
-from .providers.sec import fetch_sec_data
-from .providers.yahoo import (
-    YF_RATES_HISTORY,
-    YF_TICKERS,
-    configure_yfinance_cache,
-    fetch_yahoo_rate_histories,
-    fetch_yahoo_snapshots,
-)
 from .snapshots import build_snapshot
 
 
 logger = get_logger(__name__)
 
 
-FRED_SERIES = {
+YF_TICKERS = {
+    "indices_domestic": (
+        TickerDefinition("KOSPI", "^KS11"),
+        TickerDefinition("KOSDAQ", "^KQ11"),
+    ),
+    "indices_overseas": (
+        TickerDefinition("S&P 500", "^GSPC"),
+        TickerDefinition("Nasdaq", "^IXIC"),
+        TickerDefinition("Euro Stoxx 50", "^STOXX50E"),
+        TickerDefinition("Nikkei 225", "^N225"),
+        TickerDefinition("Hang Seng", "^HSI"),
+        TickerDefinition("Shanghai Composite", "000001.SS"),
+    ),
     "commodities_rates": (
-        FredSeriesDefinition(
-            "US 2Y Treasury",
-            "DGS2",
-            value_format=ValueFormat.YIELD_3,
-        ),
-        FredSeriesDefinition(
-            "US 10Y-2Y Spread",
-            "T10Y2Y",
-            value_format=ValueFormat.YIELD_3,
-        ),
+        TickerDefinition("Gold", "GC=F"),
+        TickerDefinition("Silver", "SI=F"),
+        TickerDefinition("Copper", "HG=F"),
+        TickerDefinition("US 10Y Treasury", "^TNX", value_format=ValueFormat.YIELD_3),
     ),
-    "risk": (
-        FredSeriesDefinition(
-            "US High Yield Spread",
-            "BAMLH0A0HYM2",
-            value_format=ValueFormat.YIELD_3,
-        ),
+    "crypto": (
+        TickerDefinition("Bitcoin", "BTC-USD"),
+        TickerDefinition("Ethereum", "ETH-USD"),
     ),
+    "volatility": (TickerDefinition("VIX", "^VIX"),),
+}
+
+YF_RATES_HISTORY = {
+    "USD/KRW": "KRW=X",
+    "JPY/KRW": "JPYKRW=X",
+    "EUR/KRW": "EURKRW=X",
 }
 
 
 def fetch_all_data() -> ReportDataset:
-    configure_yfinance_cache()
+    _configure_runtime_cache()
     results = _empty_report_dataset()
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        yahoo_rates_future = executor.submit(fetch_yahoo_rate_histories)
-        cnbc_future = executor.submit(
-            fetch_cnbc_data,
-            [*CNBC_MARKET_SYMBOLS, *CNBC_FX_SYMBOLS],
-        )
-        yahoo_future = executor.submit(fetch_yahoo_snapshots, YF_TICKERS)
-        fred_future = executor.submit(fetch_fred_snapshots, FRED_SERIES)
-        optional_futures = [
-            executor.submit(provider)
-            for provider in (
-                fetch_bls_data,
-                fetch_bea_data,
-                fetch_sec_data,
-                fetch_krx_data,
-                fetch_ecos_data,
-                fetch_kosis_data,
-                fetch_opendart_data,
-            )
-        ]
+    yf_rates_data = _fetch_rate_histories()
 
-        yf_rates_data = yahoo_rates_future.result()
-        cnbc_data = cnbc_future.result()
-        _merge_dataset(results, yahoo_future.result())
-        _merge_dataset(results, fred_future.result())
-        for future in optional_futures:
-            _merge_provider_output(results, future.result())
-
+    logger.info("Fetching CNBC data...")
+    cnbc_data = fetch_cnbc_data([*CNBC_MARKET_SYMBOLS, *CNBC_FX_SYMBOLS])
     results["exchange"].extend(build_exchange_snapshots(cnbc_data, yf_rates_data))
     _append_cnbc_market_snapshots(results, cnbc_data)
+
+    logger.info("Fetching Yahoo Finance data...")
+    _append_yahoo_snapshots(results)
     _reorder_bond_snapshots(results["commodities_rates"])
 
     logger.info(
@@ -102,37 +78,24 @@ def _empty_report_dataset() -> ReportDataset:
     return {
         "indices_domestic": [],
         "indices_overseas": [],
-        "futures": [],
-        "sectors_us": [],
-        "sectors_kr": [],
         "volatility": [],
         "commodities_rates": [],
         "exchange": [],
-        "risk": [],
-        "macro_us": [],
-        "disclosures_us": [],
         "crypto": [],
     }
 
 
-def _merge_dataset(target: ReportDataset, source: ReportDataset) -> None:
-    for category, items in source.items():
-        target_items = target.setdefault(category, [])
-        for item in items:
-            if not _has_finite_price(item):
-                logger.warning("Skipping invalid snapshot value for %s", item.name)
-                continue
-            target_items.append(item)
-
-
-def _has_finite_price(item) -> bool:
-    return item.price is not None and math.isfinite(float(item.price))
-
-
-def _merge_provider_output(target: ReportDataset, output: ProviderOutput) -> None:
-    _merge_dataset(target, output.dataset)
-    for warning in output.warnings:
-        logger.info("Provider skipped: %s", warning)
+def _fetch_rate_histories():
+    histories = {}
+    logger.info("Fetching YF rates history...")
+    for name, ticker in YF_RATES_HISTORY.items():
+        try:
+            history = yf.Ticker(ticker).history(period="1mo")
+            if not history.empty:
+                histories[name] = history
+        except Exception as exc:
+            logger.error("Error fetching YF history for %s: %s", name, exc)
+    return histories
 
 
 def _append_cnbc_market_snapshots(results: ReportDataset, cnbc_data) -> None:
@@ -155,6 +118,44 @@ def _append_cnbc_market_snapshots(results: ReportDataset, cnbc_data) -> None:
                 value_format=value_format,
             )
         )
+
+
+def _append_yahoo_snapshots(results: ReportDataset) -> None:
+    for category, definitions in YF_TICKERS.items():
+        for definition in definitions:
+            try:
+                data = yf.Ticker(definition.symbol).history(period="1mo")
+                if data.empty:
+                    logger.warning(
+                        "Yahoo Finance returned no history for %s (%s)",
+                        definition.name,
+                        definition.symbol,
+                    )
+                    continue
+
+                last_price = float(data["Close"].iloc[-1])
+                if len(data) > 1:
+                    previous_price = float(data["Close"].iloc[-2])
+                    change = last_price - previous_price
+                    change_pct = (change / previous_price) * 100
+                else:
+                    change = 0.0
+                    change_pct = 0.0
+
+                results[category].append(
+                    build_snapshot(
+                        definition.name,
+                        last_price,
+                        change,
+                        change_pct,
+                        history=data["Close"].tail(7).tolist(),
+                        ticker=definition.symbol,
+                        dates=[date.strftime("%m-%d") for date in data.tail(7).index],
+                        value_format=definition.value_format,
+                    )
+                )
+            except Exception as exc:
+                logger.error("Error fetching YF %s: %s", definition.name, exc)
 
 
 def _reorder_bond_snapshots(commodities_rates) -> None:
@@ -192,3 +193,13 @@ def _reorder_bond_snapshots(commodities_rates) -> None:
         return
 
     commodities_rates.insert(korea_10y_index + 1, us_10y_snapshot)
+
+
+def _configure_runtime_cache() -> None:
+    cache_dir = os.environ.get(
+        "YFINANCE_CACHE_DIR",
+        os.path.join(tempfile.gettempdir(), "macro-pulse-yfinance"),
+    )
+    os.makedirs(cache_dir, exist_ok=True)
+    if hasattr(yf, "set_tz_cache_location"):
+        yf.set_tz_cache_location(cache_dir)

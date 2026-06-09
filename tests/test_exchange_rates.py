@@ -32,7 +32,6 @@ def print_exchange_snapshot(exchange):
 
 class ExchangeRateCalculationTests(unittest.TestCase):
     @patch.dict(market_data.YF_TICKERS, {}, clear=True)
-    @patch.dict(market_data.FRED_SERIES, {}, clear=True)
     @patch.dict(
         market_data.YF_RATES_HISTORY,
         {
@@ -71,7 +70,7 @@ class ExchangeRateCalculationTests(unittest.TestCase):
             ),
         },
     )
-    @patch("macro_pulse.data.providers.yahoo.yf.Ticker")
+    @patch("macro_pulse.data.market_data.yf.Ticker")
     def test_fetch_all_data_builds_expected_exchange_results(
         self,
         mock_ticker,
@@ -152,7 +151,6 @@ class ExchangeRateCalculationTests(unittest.TestCase):
         print_exchange_snapshot(exchange)
 
     @patch.dict(market_data.YF_TICKERS, {}, clear=True)
-    @patch.dict(market_data.FRED_SERIES, {}, clear=True)
     @patch.dict(market_data.YF_RATES_HISTORY, {}, clear=True)
     @patch(
         "macro_pulse.data.market_data.fetch_cnbc_data",
