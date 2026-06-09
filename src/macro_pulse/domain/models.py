@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, Mapping, Sequence
@@ -314,8 +315,18 @@ def coerce_exchange_rates(
 def _coerce_optional_float(value: Any) -> float | None:
     if value is None:
         return None
-    return float(value)
+    normalized_value = float(value)
+    if not math.isfinite(normalized_value):
+        return None
+    return normalized_value
 
 
 def _coerce_float_list(values: Sequence[Any]) -> list[float]:
-    return [float(value) for value in values]
+    normalized_values = []
+    for value in values:
+        if value is None:
+            continue
+        normalized_value = float(value)
+        if math.isfinite(normalized_value):
+            normalized_values.append(normalized_value)
+    return normalized_values

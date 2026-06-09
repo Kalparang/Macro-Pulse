@@ -12,6 +12,8 @@ from ..snapshots import build_snapshot
 
 logger = get_logger(__name__)
 
+YF_HISTORY_PERIODS = ("1mo", "3mo", "1y")
+
 
 YF_TICKERS = {
     "indices_domestic": (
@@ -118,20 +120,16 @@ def fetch_yahoo_snapshots(
 
 def fetch_yahoo_snapshot(definition: TickerDefinition):
     try:
-        data = yf.Ticker(definition.symbol).history(period="1mo")
-        if data.empty:
-            logger.warning(
-                "Yahoo Finance returned no history for %s (%s)",
-                definition.name,
-                definition.symbol,
-            )
+        data = fetch_yahoo_history(definition.symbol)
+        if data is None:
             return None
 
-        last_price = float(data["Close"].iloc[-1])
-        if len(data) > 1:
-            previous_price = float(data["Close"].iloc[-2])
+        close_prices = data["Close"].dropna()
+        last_price = float(close_prices.iloc[-1])
+        if len(close_prices) > 1:
+            previous_price = float(close_prices.iloc[-2])
             change = last_price - previous_price
-            change_pct = (change / previous_price) * 100
+            change_pct = (change / previous_price) * 100 if previous_price else 0.0
         else:
             change = 0.0
             change_pct = 0.0
@@ -141,11 +139,41 @@ def fetch_yahoo_snapshot(definition: TickerDefinition):
             last_price,
             change,
             change_pct,
-            history=data["Close"].tail(7).tolist(),
+            history=close_prices.tail(7).tolist(),
             ticker=definition.symbol,
-            dates=[date.strftime("%m-%d") for date in data.tail(7).index],
+            dates=[date.strftime("%m-%d") for date in close_prices.tail(7).index],
             value_format=definition.value_format,
         )
     except Exception as exc:
         logger.error("Error fetching YF %s: %s", definition.name, exc)
         return None
+
+
+def fetch_yahoo_history(symbol: str):
+    ticker = yf.Ticker(symbol)
+    for period in YF_HISTORY_PERIODS:
+        data = ticker.history(period=period)
+        if data.empty:
+            logger.warning(
+                "Yahoo Finance returned no history for %s over %s",
+                symbol,
+                period,
+            )
+            continue
+
+        if "Close" not in data:
+            logger.warning("Yahoo Finance history for %s has no Close column", symbol)
+            continue
+
+        if data["Close"].dropna().empty:
+            logger.warning(
+                "Yahoo Finance returned no valid close prices for %s over %s",
+                symbol,
+                period,
+            )
+            continue
+
+        return data
+
+    logger.error("Yahoo Finance returned no usable close prices for %s", symbol)
+    return None

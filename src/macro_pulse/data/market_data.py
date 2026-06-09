@@ -1,3 +1,4 @@
+import math
 from concurrent.futures import ThreadPoolExecutor
 
 from ..core.logging import get_logger
@@ -116,7 +117,16 @@ def _empty_report_dataset() -> ReportDataset:
 
 def _merge_dataset(target: ReportDataset, source: ReportDataset) -> None:
     for category, items in source.items():
-        target.setdefault(category, []).extend(items)
+        target_items = target.setdefault(category, [])
+        for item in items:
+            if not _has_finite_price(item):
+                logger.warning("Skipping invalid snapshot value for %s", item.name)
+                continue
+            target_items.append(item)
+
+
+def _has_finite_price(item) -> bool:
+    return item.price is not None and math.isfinite(float(item.price))
 
 
 def _merge_provider_output(target: ReportDataset, output: ProviderOutput) -> None:
