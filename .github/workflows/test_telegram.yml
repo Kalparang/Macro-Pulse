@@ -21,6 +21,19 @@ jobs:
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       PAGES_REPORT_URL: ${{ vars.PAGES_REPORT_URL || secrets.PAGES_REPORT_URL }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY || vars.FRED_API_KEY }}
+      BLS_API_KEY: ${{ secrets.BLS_API_KEY || vars.BLS_API_KEY }}
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
+      KRX_API_KEY: ${{ secrets.KRX_API_KEY || vars.KRX_API_KEY }}
+      KRX_KOSPI_STOCK_DAILY_URL: ${{ vars.KRX_KOSPI_STOCK_DAILY_URL || secrets.KRX_KOSPI_STOCK_DAILY_URL }}
+      KRX_KOSDAQ_STOCK_DAILY_URL: ${{ vars.KRX_KOSDAQ_STOCK_DAILY_URL || secrets.KRX_KOSDAQ_STOCK_DAILY_URL }}
+      KRX_INDEX_KOSPI_URL: ${{ vars.KRX_INDEX_KOSPI_URL || secrets.KRX_INDEX_KOSPI_URL }}
+      KRX_INDEX_KOSDAQ_URL: ${{ vars.KRX_INDEX_KOSDAQ_URL || secrets.KRX_INDEX_KOSDAQ_URL }}
+      KRX_INDEX_KRX_URL: ${{ vars.KRX_INDEX_KRX_URL || secrets.KRX_INDEX_KRX_URL }}
+      KRX_FUTURES_DAILY_URL: ${{ vars.KRX_FUTURES_DAILY_URL || secrets.KRX_FUTURES_DAILY_URL }}
+      KRX_ETF_DAILY_URL: ${{ vars.KRX_ETF_DAILY_URL || secrets.KRX_ETF_DAILY_URL }}
+      KRX_INVESTOR_FLOW_URL: ${{ vars.KRX_INVESTOR_FLOW_URL || secrets.KRX_INVESTOR_FLOW_URL }}
+      OPENDART_API_KEY: ${{ secrets.OPENDART_API_KEY || vars.OPENDART_API_KEY }}
       
     steps:
     - name: Checkout code
@@ -45,6 +58,19 @@ jobs:
           -e TELEGRAM_CHAT_ID \
           -e DISCORD_WEBHOOK_URL \
           -e PAGES_REPORT_URL \
+          -e FRED_API_KEY \
+          -e BLS_API_KEY \
+          -e SEC_USER_AGENT \
+          -e KRX_API_KEY \
+          -e KRX_KOSPI_STOCK_DAILY_URL \
+          -e KRX_KOSDAQ_STOCK_DAILY_URL \
+          -e KRX_INDEX_KOSPI_URL \
+          -e KRX_INDEX_KOSDAQ_URL \
+          -e KRX_INDEX_KRX_URL \
+          -e KRX_FUTURES_DAILY_URL \
+          -e KRX_ETF_DAILY_URL \
+          -e KRX_INVESTOR_FLOW_URL \
+          -e OPENDART_API_KEY \
           -v "$PWD:/app" \
           -w /app \
           macro-pulse:test \

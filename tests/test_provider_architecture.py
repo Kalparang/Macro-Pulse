@@ -3,6 +3,7 @@ import sys
 import tempfile
 import time
 import unittest
+import math
 from pathlib import Path
 from unittest.mock import patch
 
@@ -10,6 +11,7 @@ from unittest.mock import patch
 sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
 
 from macro_pulse.data.cache import TtlCache
+from macro_pulse.data.snapshots import build_snapshot
 from macro_pulse.data.providers.krx import fetch_krx_data
 from macro_pulse.domain.models import MarketSnapshot
 
@@ -54,6 +56,20 @@ class ProviderArchitectureTests(unittest.TestCase):
 
         self.assertEqual(output.dataset, {})
         self.assertIn("KRX_API_KEY missing", output.warnings)
+
+    def test_build_snapshot_normalizes_non_finite_numbers(self):
+        snapshot = build_snapshot(
+            "KOSPI",
+            math.nan,
+            math.inf,
+            -math.inf,
+            history=[1.0, math.nan, 2.0],
+        )
+
+        self.assertIsNone(snapshot.price)
+        self.assertIsNone(snapshot.change)
+        self.assertIsNone(snapshot.change_pct)
+        self.assertEqual(snapshot.history, [1.0, 2.0])
 
 
 if __name__ == "__main__":

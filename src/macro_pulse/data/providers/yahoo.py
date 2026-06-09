@@ -127,11 +127,20 @@ def fetch_yahoo_snapshot(definition: TickerDefinition):
             )
             return None
 
-        last_price = float(data["Close"].iloc[-1])
-        if len(data) > 1:
-            previous_price = float(data["Close"].iloc[-2])
+        close_prices = data["Close"].dropna()
+        if close_prices.empty:
+            logger.warning(
+                "Yahoo Finance returned no valid close prices for %s (%s)",
+                definition.name,
+                definition.symbol,
+            )
+            return None
+
+        last_price = float(close_prices.iloc[-1])
+        if len(close_prices) > 1:
+            previous_price = float(close_prices.iloc[-2])
             change = last_price - previous_price
-            change_pct = (change / previous_price) * 100
+            change_pct = (change / previous_price) * 100 if previous_price else 0.0
         else:
             change = 0.0
             change_pct = 0.0
@@ -141,9 +150,9 @@ def fetch_yahoo_snapshot(definition: TickerDefinition):
             last_price,
             change,
             change_pct,
-            history=data["Close"].tail(7).tolist(),
+            history=close_prices.tail(7).tolist(),
             ticker=definition.symbol,
-            dates=[date.strftime("%m-%d") for date in data.tail(7).index],
+            dates=[date.strftime("%m-%d") for date in close_prices.tail(7).index],
             value_format=definition.value_format,
         )
     except Exception as exc:
