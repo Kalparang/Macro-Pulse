@@ -1,4 +1,4 @@
-name: Test Telegram Report
+name: Test Delivery Report
 
 on:
   workflow_dispatch:
@@ -19,7 +19,8 @@ jobs:
       REPORT_FORMAT_CONFIG: config/report_formats.json
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
@@ -35,12 +36,13 @@ jobs:
           macro-pulse:test \
           sh -lc "uv run --frozen python -m unittest discover tests 2>&1 | tee unit-test.log"
 
-    - name: Run Telegram report test in Docker
+    - name: Run delivery report test in Docker
       run: |
         docker run --rm \
           -e REPORT_FORMAT_CONFIG \
           -e TELEGRAM_BOT_TOKEN \
           -e TELEGRAM_CHAT_ID \
+          -e DISCORD_WEBHOOK_URL \
           -v "$PWD:/app" \
           -w /app \
           macro-pulse:test \
@@ -50,7 +52,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v6
       with:
-        name: telegram-test-${{ inputs.market }}
+        name: delivery-test-${{ inputs.market }}
         path: |
           macro_pulse_report.html
           macro-pulse.log
@@ -62,5 +64,5 @@ jobs:
       run: |
         curl --silent --show-error --fail \
           --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-          --data-urlencode "text=Macro Pulse manual Telegram test failed: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+          --data-urlencode "text=Macro Pulse manual delivery test failed: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
           "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
