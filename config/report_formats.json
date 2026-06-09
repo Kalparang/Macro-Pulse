@@ -36,18 +36,6 @@
           "items": ["USD/KRW", "DXY", "JPY/KRW", "CNY/KRW"]
         },
         {
-          "title": "\uc2dc\uc7a5 \ud3ed, \uc218\uae09",
-          "category": "market_breadth_kr",
-          "items": [
-            "KRX Advancing Issues",
-            "KRX Declining Issues",
-            "KRX Trading Value",
-            "KRX Foreign Net Buy",
-            "KRX Institution Net Buy",
-            "KRX Individual Net Buy"
-          ]
-        },
-        {
           "title": "\ucc44\uad8c, \uc6d0\uc790\uc7ac",
           "category": "commodities_rates",
           "items": [
@@ -61,17 +49,6 @@
           "title": "\ub9ac\uc2a4\ud06c",
           "category": "volatility",
           "items": ["VKOSPI", "VIX", "MOVE"]
-        },
-        {
-          "title": "DART \uacf5\uc2dc",
-          "category": "disclosures_kr",
-          "items": [
-            "DART Filings (7d)",
-            "DART Major Issue Filings (7d)",
-            "DART Issuance Filings (7d)",
-            "DART KOSPI Filings (7d)",
-            "DART KOSDAQ Filings (7d)"
-          ]
         },
         {
           "title": "\ud574\uc678 \uc99d\uc2dc",

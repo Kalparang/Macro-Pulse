@@ -142,10 +142,6 @@ def _format_numeric(value, value_format):
         return f"${value:,.2f}"
     if value_format == ValueFormat.THOUSANDS_TO_MILLIONS_1:
         return f"{value / 1000:,.1f}M"
-    if value_format == ValueFormat.KRW_EOK_0:
-        return f"{value:,.0f}억원"
-    if value_format == ValueFormat.KRW_TRILLION_1:
-        return f"{value:,.1f}조원"
     decimals = 3 if value_format == ValueFormat.YIELD_3 else 2
     return f"{value:,.{decimals}f}"
 
@@ -161,9 +157,5 @@ def _format_signed_numeric(value, value_format):
         return f"{value:+,.2f}"
     if value_format == ValueFormat.THOUSANDS_TO_MILLIONS_1:
         return f"{value / 1000:+,.1f}M"
-    if value_format == ValueFormat.KRW_EOK_0:
-        return f"{value:+,.0f}억원"
-    if value_format == ValueFormat.KRW_TRILLION_1:
-        return f"{value:+,.1f}조원"
     decimals = 3 if value_format == ValueFormat.YIELD_3 else 2
     return f"{value:+,.{decimals}f}"

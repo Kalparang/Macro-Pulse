@@ -41,9 +41,6 @@ class ReportFormatConfigTests(unittest.TestCase):
         self.assertIn("KOSPI200", kr_sections["indices_domestic"])
         self.assertIn("Korea Semiconductors", kr_sections["sectors_kr"])
         self.assertIn("DXY", kr_sections["exchange"])
-        self.assertIn("KRX Trading Value", kr_sections["market_breadth_kr"])
-        self.assertIn("KRX Foreign Net Buy", kr_sections["market_breadth_kr"])
-        self.assertIn("DART Filings (7d)", kr_sections["disclosures_kr"])
 
         self.assertIn("Nasdaq 100", us_sections["indices_overseas"])
         self.assertIn("US 2Y Treasury", us_sections["commodities_rates"])
